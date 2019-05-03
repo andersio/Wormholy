@@ -9,20 +9,25 @@
 import UIKit
 
 class RequestsViewController: WHBaseViewController {
-    
+
     @IBOutlet weak var collectionView: WHCollectionView!
+    @IBOutlet weak var layout: UICollectionViewFlowLayout!
+
     var filteredRequests: [RequestModel] = []
     var searchController: UISearchController?
+    var prototypeCell: RequestCell!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         addSearchController()
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "More", style: .plain, target: self, action: #selector(openActionSheet))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(done))
-        
-        collectionView?.register(UINib(nibName: "RequestCell", bundle:WHBundle.getBundle()), forCellWithReuseIdentifier: "RequestCell")
+
+        let nib = UINib(nibName: "RequestCell", bundle:WHBundle.getBundle())
+        prototypeCell = (nib.instantiate(withOwner: nil, options: nil)[0] as! RequestCell)
+        collectionView?.register(nib, forCellWithReuseIdentifier: "RequestCell")
         
         filteredRequests = Storage.shared.requests
         NotificationCenter.default.addObserver(forName: newRequestNotification, object: nil, queue: nil) { [weak self] (notification) in
@@ -33,20 +38,7 @@ class RequestsViewController: WHBaseViewController {
         }
         
     }
-    
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        
-        coordinator.animate(alongsideTransition: { (context) in
-            //Place code here to perform animations during the rotation.
-            
-        }) { (completionContext) in
-            //Code here will execute after the rotation has finished.
-            (self.collectionView?.collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize = CGSize(width: UIScreen.main.bounds.width, height: 76)
-            self.collectionView.reloadData()
-        }
-    }
-    
+
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
@@ -156,11 +148,18 @@ extension RequestsViewController: UICollectionViewDelegate, UICollectionViewDele
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         openRequestDetailVC(request: filteredRequests[indexPath.item])
     }
-    
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.bounds.size.width, height: 76)
+
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        prototypeCell.populate(request: filteredRequests[indexPath.item])
+
+        let width = collectionView.bounds.width
+        let height = prototypeCell.contentView
+            .systemLayoutSizeFitting(CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                                     withHorizontalFittingPriority: .required,
+                                     verticalFittingPriority: .fittingSizeLevel)
+            .height
+
+        return CGSize(width: width, height: height)
     }
 }
 
