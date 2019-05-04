@@ -48,6 +48,13 @@ open class Storage {
     init() {
         lock = os_unfair_lock_t.allocate(capacity: 1)
         lock.initialize(to: os_unfair_lock_s())
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(observeMemoryWarning),
+            name: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil
+        )
     }
 
     deinit {
@@ -94,6 +101,10 @@ open class Storage {
                 observer(.cleared)
             }
         }
+    }
+
+    @objc private func observeMemoryWarning() {
+        clearRequests()
     }
 
     private func transaction<R>(_ action: () -> R) -> R {
