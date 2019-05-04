@@ -11,6 +11,7 @@ import Foundation
 open class Storage {
     public enum Change {
         case appended([RequestModel])
+        case removed(indice: Range<Int>)
         case updated(RequestModel, at: Int)
         case cleared
     }
@@ -79,16 +80,15 @@ open class Storage {
 
             if let index = knownRequestIndex {
                 requests[index] = request
-
-                for observer in observers.values {
-                    observer(.updated(request, at: index))
-                }
+                notify(.updated(request, at: index))
             } else {
                 requests.append(request)
+                notify(.appended([request]))
+            }
 
-                for observer in observers.values {
-                    observer(.appended([request]))
-                }
+            if requests.count > 100 {
+                requests.removeFirst()
+                notify(.removed(indice: 0 ..< 1))
             }
         }
     }
@@ -112,5 +112,13 @@ open class Storage {
         let r = action()
         os_unfair_lock_unlock(lock)
         return r
+    }
+
+    private func notify(_ change: Change) {
+        os_unfair_lock_assert_owner(lock)
+
+        for observer in observers.values {
+            observer(change)
+        }
     }
 }

@@ -60,6 +60,8 @@ public class CustomHTTPProtocol: URLProtocol {
         if let request = currentRequest {
             Storage.shared.saveRequest(request: request)
         }
+
+        session?.invalidateAndCancel()
     }
     
     private func body(from request: URLRequest) -> Data? {

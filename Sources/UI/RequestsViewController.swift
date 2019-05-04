@@ -50,6 +50,14 @@ class RequestsViewController: WHBaseViewController {
                             at: (0 ..< items.count).map { IndexPath(item: $0, section: 0) }
                         )
                     }
+                case let .removed(range):
+                    self.items.removeSubrange(range)
+
+                    if !self.isSearching {
+                        self.collectionView.deleteItems(
+                            at: range.map { IndexPath(item: self.presentationIndex(fromModelIndex: $0), section: 0) }
+                        )
+                    }
                 case let .updated(item, at: index):
                     self.items[index] = item
 
