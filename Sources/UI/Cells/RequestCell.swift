@@ -23,7 +23,7 @@ class RequestCell: UICollectionViewCell {
         methodLabel.text = request?.method.uppercased()
         codeLabel.isHidden = request?.code == 0 ? true : false
         codeLabel.text = request?.code != nil ? String(request!.code) : "-"
-        if let code = request?.code{
+        if let code = request?.code {
             var color: UIColor = Colors.HTTPCode.Generic
             switch code {
             case 200..<300:
@@ -44,7 +44,44 @@ class RequestCell: UICollectionViewCell {
             codeLabel.borderColor = Colors.HTTPCode.Generic
             codeLabel.textColor = Colors.HTTPCode.Generic
         }
-        urlLabel.text = request?.url
+        urlLabel.attributedText = (request?.url).flatMap(highlightURL(pathColor: codeLabel.textColor))
         durationLabel.text = request?.duration?.formattedMilliseconds() ?? ""
+    }
+
+    private func highlightURL(pathColor: UIColor) -> (_ urlString: String) -> NSAttributedString? {
+        return { urlString in
+            guard let components = URLComponents(string: urlString) else { return nil }
+
+            let font = UIFont.systemFont(ofSize: 12.0)
+            let string = NSMutableAttributedString()
+
+            if let scheme = components.scheme {
+                string.append(NSAttributedString(
+                    string: scheme + "://",
+                    attributes: [.font: font, .foregroundColor: UIColor(white: 0.8, alpha: 1.0)]
+                ))
+            }
+
+            if let host = components.host {
+                string.append(NSAttributedString(
+                    string: host,
+                    attributes: [.font: font, .foregroundColor: UIColor(white: 0.6, alpha: 1.0)]
+                ))
+            }
+
+            string.append(NSAttributedString(
+                string: components.path,
+                attributes: [.font: font, .foregroundColor: pathColor]
+            ))
+
+            if let query = components.query {
+                string.append(NSAttributedString(
+                    string: "?" + query,
+                    attributes: [.font: font, .foregroundColor: UIColor(white: 0.3, alpha: 1.0)]
+                ))
+            }
+
+            return string
+        }
     }
 }
