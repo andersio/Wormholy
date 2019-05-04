@@ -10,9 +10,10 @@ import UIKit
 
 class RequestCell: UICollectionViewCell {
     
-    @IBOutlet weak var methodLabel: WHLabel!
     @IBOutlet weak var codeLabel: WHLabel!
-    @IBOutlet weak var urlLabel: WHLabel!
+    @IBOutlet weak var hostLabel: WHLabel!
+    @IBOutlet weak var pathLabel: WHLabel!
+    @IBOutlet weak var queryLabel: WHLabel!
     @IBOutlet weak var durationLabel: WHLabel!
     
     func populate(request: RequestModel?){
@@ -20,9 +21,8 @@ class RequestCell: UICollectionViewCell {
             return
         }
         
-        methodLabel.text = request?.method.uppercased()
-        codeLabel.isHidden = request?.code == 0 ? true : false
-        codeLabel.text = request?.code != nil ? String(request!.code) : "-"
+        let code = request?.code ?? 0
+        codeLabel.text = code != 0 ? String(request!.code) : "..."
         if let code = request?.code {
             var color: UIColor = Colors.HTTPCode.Generic
             switch code {
@@ -39,49 +39,26 @@ class RequestCell: UICollectionViewCell {
             }
             codeLabel.borderColor = color
             codeLabel.textColor = color
-        }
-        else{
+        } else {
             codeLabel.borderColor = Colors.HTTPCode.Generic
             codeLabel.textColor = Colors.HTTPCode.Generic
         }
-        urlLabel.attributedText = (request?.url).flatMap(highlightURL(pathColor: codeLabel.textColor))
         durationLabel.text = request?.duration?.formattedMilliseconds() ?? ""
-    }
 
-    private func highlightURL(pathColor: UIColor) -> (_ urlString: String) -> NSAttributedString? {
-        return { urlString in
-            guard let components = URLComponents(string: urlString) else { return nil }
 
-            let font = UIFont.systemFont(ofSize: 12.0)
-            let string = NSMutableAttributedString()
+        let components = request.flatMap { URLComponents(string: $0.url) }
 
-            if let scheme = components.scheme {
-                string.append(NSAttributedString(
-                    string: scheme + "://",
-                    attributes: [.font: font, .foregroundColor: UIColor(white: 0.8, alpha: 1.0)]
-                ))
-            }
-
-            if let host = components.host {
-                string.append(NSAttributedString(
-                    string: host,
-                    attributes: [.font: font, .foregroundColor: UIColor(white: 0.6, alpha: 1.0)]
-                ))
-            }
-
-            string.append(NSAttributedString(
-                string: components.path,
-                attributes: [.font: font, .foregroundColor: pathColor]
-            ))
-
-            if let query = components.query {
-                string.append(NSAttributedString(
-                    string: "?" + query,
-                    attributes: [.font: font, .foregroundColor: UIColor(white: 0.3, alpha: 1.0)]
-                ))
-            }
-
-            return string
+        let schemeAndHost = NSMutableAttributedString()
+        if let method = request?.method.uppercased() {
+            schemeAndHost.append(NSAttributedString(string: method + " ", attributes: [.foregroundColor: UIColor.black]))
         }
+        if let host = components?.host {
+            let scheme = components?.scheme.map { "\($0)://" } ?? ""
+            schemeAndHost.append(NSAttributedString(string: scheme + host, attributes: [.foregroundColor: UIColor.lightGray]))
+        }
+        hostLabel.attributedText = schemeAndHost
+        pathLabel.text = components?.path ?? ""
+        queryLabel.text = components?.query.map { "?" + $0 } ?? ""
+        queryLabel.isHidden = components?.query == nil
     }
 }
